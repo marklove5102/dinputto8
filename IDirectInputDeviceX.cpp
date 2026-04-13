@@ -496,20 +496,23 @@ HRESULT m_IDirectInputDeviceX::GetDeviceState(DWORD cbData, LPVOID lpvData)
 	// Handle data format offset
 	if (Offset)
 	{
-		UCHAR tmp[MAX_KEYBOARD] = {};
+		BYTE Data[MAX_KEYBOARD] = {};
 
-		HRESULT hr = ProxyInterface->GetDeviceState(MAX_KEYBOARD, tmp);
+		HRESULT hr = ProxyInterface->GetDeviceState(MAX_KEYBOARD, Data);
 
 		if (SUCCEEDED(hr))
 		{
 			ZeroMemory(lpvData, cbData);
 
-			const DWORD copySize = min(cbData, MAX_KEYBOARD);
-
-			for (DWORD x = Offset; x < copySize && x < cbData; x++)
+			if (Offset >= cbData)
 			{
-				((BYTE*)lpvData)[x] = tmp[x - Offset];
+				Logging::Log() << __FUNCTION__ << " GetDeviceState: Offset exceeds buffer size! Offset=" << Offset << " cbData=" << cbData;
+				return hr;
 			}
+
+			const DWORD copySize = min(MAX_KEYBOARD, cbData - Offset);
+			memcpy((BYTE*)lpvData + Offset, Data, copySize);
+
 		}
 
 		return hr;
